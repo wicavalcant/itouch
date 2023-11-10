@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #container {
+            max-width: 400px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #descricao {
+            text-align: justify;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+        }
+
+        input {
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        #participantes {
+            margin-top: 20px;
+        }
+
+        #contador {
+            margin-top: 10px;
+        }
+
+        #listaParticipantes {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #listaParticipantes li {
+            margin-bottom: 5px;
+        }
+
+        #numeroExistente {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <h1>Sorteio</h1>
+    <div id="descricao">
+        <p>O valor por cada número para participar do sorteio é de 1 real. O sorteio será feito ao vivo no Instagram da nossa loja <a href="https://www.instagram.com/itouch_ofc/?utm_source=ig_web_button_share_sheet&igshid=OGQ5ZDc2ODk2ZA==" target="_blank">iTouch_ofc</a>, assim que batermos a meta de pelo menos 700 números vendidos. O convite para assistir o sorteio será postado 1 dia antes da data do sorteio. Está muito fácil para qualquer um de vocês ganharem, basta ter um pouco de sorte.</p>
+    </div>
+    
+    <form id="sorteioForm">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required>
+
+        <label for="telefone">Telefone:</label>
+        <input type="text" id="telefone" name="telefone" required>
+
+        <label for="numero">Número (1-999):</label>
+        <input type="number" id="numero" name="numero" min="1" max="999" required>
+
+        <label for="aleatorio">Escolher Número Aleatório:</label>
+        <input type="checkbox" id="aleatorio" name="aleatorio">
+
+        <!-- Exibe mensagem se o número já existe -->
+        <div id="numeroExistente"></div>
+
+        <button type="button" onclick="realizarSorteio()">Participar do Sorteio</button>
+    </form>
+
+    <!-- Lista de Participantes -->
+    <div id="participantes">
+        <h2>Participantes:</h2>
+        <ul id="listaParticipantes"></ul>
+        <div id="contador">Total de Participantes: <span id="totalParticipantes">0</span></div>
+    </div>
+</div>
+
+<script>
+    // Recupera a lista de participantes do armazenamento local
+    var participantes = JSON.parse(localStorage.getItem('participantes')) || [];
+
+    // Atualiza a lista de participantes e o contador na inicialização
+    exibirParticipantes();
+
+    function realizarSorteio() {
+        var nome = document.getElementById('nome').value;
+        var telefone = document.getElementById('telefone').value;
+        var numeroInput = document.getElementById('numero');
+        var aleatorioCheckbox = document.getElementById('aleatorio');
+
+        // Verifica se a opção de número aleatório está marcada
+        var numero = aleatorioCheckbox.checked ? gerarNumeroAleatorio() : numeroInput.value;
+
+        // Verifica se o número já foi escolhido
+        if (numeroEscolhido(numero)) {
+            document.getElementById('numeroExistente').textContent = 'Este número já foi escolhido por outra pessoa.';
+            return;
+        } else {
+            document.getElementById('numeroExistente').textContent = '';
+        }
+
+        // Verifica se o número é válido (não é vazio e está entre 1 e 999)
+        if (nome !== "" && telefone !== "" && numero !== "" && numero >= 1 && numero <= 999) {
+            // Adiciona participante à lista
+            var participante = { nome: nome, numero: numero };
+            participantes.push(participante);
+
+            // Atualiza o armazenamento local
+            localStorage.setItem('participantes', JSON.stringify(participantes));
+
+            // Exibe participante na lista
+            exibirParticipantes();
+
+            // Limpa os campos após o cadastro
+            document.getElementById('nome').value = "";
+            document.getElementById('telefone').value = "";
+            numeroInput.value = "";
+            aleatorioCheckbox.checked = false;
+
+            // Exibe alerta
+            alert('Obrigado, ' + nome + '! Você está participando do sorteio com o número ' + numero + '.');
+
+            // Abre uma nova janela com o link fornecido
+            var novaJanela = window.open('https://mpago.la/1k5KzvQ', '_blank');
+            if (novaJanela) {
+                // Verifica se a nova janela foi aberta com sucesso
+                novaJanela.focus();
+            } else {
+                // Se não for possível abrir uma nova janela, redireciona para o link
+                window.location.href = 'https://mpago.la/1k5KzvQ';
+            }
+        } else {
+            alert('Por favor, preencha todos os campos obrigatórios corretamente.');
+        }
+    }
+
+    function exibirParticipantes() {
+        var listaParticipantes = document.getElementById('listaParticipantes');
+        var totalParticipantes = document.getElementById('totalParticipantes');
+        listaParticipantes.innerHTML = "";
+        totalParticipantes.textContent = participantes.length;
+
+        participantes.forEach(function(participante) {
+            var li = document.createElement('li');
+            li.appendChild(document.createTextNode(participante.nome + ' - Número ' + participante.numero));
+            listaParticipantes.appendChild(li);
+        });
+    }
+
+    function numeroEscolhido(numero) {
+        return participantes.some(function(participante) {
+            return participante.numero === numero;
+        });
+    }
+
+    function gerarNumeroAleatorio() {
+        var aleatorio;
+        do {
+            aleatorio = Math.floor(Math.random() * 999) + 1;
+        } while (numeroEscolhido(aleatorio));
+        return aleatorio;
+    }
+</script>
+
+</body>
+</html>
